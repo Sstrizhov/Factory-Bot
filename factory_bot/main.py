@@ -7,8 +7,6 @@ import sys
 from pathlib import Path
 
 from aiogram import Bot, Dispatcher
-from aiogram.client.default import DefaultBotProperties
-from aiogram.enums import ParseMode
 
 from factory_bot.config import load_settings, setup_logging
 from factory_bot.handlers import commands as cmd_handlers
@@ -43,7 +41,7 @@ async def main() -> None:
     factory = Factory(db=db, brain=brain, scraper=scraper, system_prompt=system_prompt)
 
     # --- aiogram ---
-    bot = Bot(cfg.bot_token, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+    bot = Bot(cfg.bot_token)
     dp = Dispatcher()
     dp.include_router(cmd_handlers.build_router(cfg.owner_tg_id, db, factory))
     dp.include_router(msg_handlers.build_router(cfg.owner_tg_id, db, brain,
