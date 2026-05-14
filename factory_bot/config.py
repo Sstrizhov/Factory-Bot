@@ -20,9 +20,11 @@ class Settings:
     deepseek_model: str
     deepseek_base_url: str
 
-    # Groq Whisper для голосовых (опционально — если ключа нет, бот игнорирует voice).
+    # Groq для голосовых (Whisper) и изображений (Llama Vision).
+    # Опционально — если ключа нет, голос и vision не работают, остальное живёт.
     groq_api_key: str | None
-    groq_model: str
+    groq_model: str           # Whisper модель
+    groq_vision_model: str    # Vision модель (Llama)
     groq_base_url: str
 
     db_path: Path
@@ -55,6 +57,7 @@ def load_settings() -> Settings:
         deepseek_base_url=_opt("DEEPSEEK_BASE_URL", "https://api.deepseek.com"),
         groq_api_key=(os.getenv("GROQ_API_KEY") or "").strip() or None,
         groq_model=_opt("GROQ_MODEL", "whisper-large-v3-turbo"),
+        groq_vision_model=_opt("GROQ_VISION_MODEL", "llama-3.2-11b-vision-preview"),
         groq_base_url=_opt("GROQ_BASE_URL", "https://api.groq.com/openai/v1"),
         db_path=Path(_opt("DB_PATH", "./data/factory.db")).expanduser().resolve(),
         timezone=_opt("TZ", "Europe/Moscow"),
