@@ -16,6 +16,7 @@ from factory_bot.services.competitors import CompetitorScraper
 from factory_bot.services.db import DB
 from factory_bot.services.factory import Factory
 from factory_bot.services.scheduler import WeeklyScheduler
+from factory_bot.services.voice import VoiceTranscriber
 
 
 SYSTEM_PROMPT_PATH = Path(__file__).parent / "prompts" / "system_prompt.md"
@@ -40,12 +41,27 @@ async def main() -> None:
     system_prompt = SYSTEM_PROMPT_PATH.read_text(encoding="utf-8")
     factory = Factory(db=db, brain=brain, scraper=scraper, system_prompt=system_prompt)
 
+    # Голосовые — опционально (если GROQ_API_KEY не задан, voice handler молчит).
+    voice = None
+    if cfg.groq_api_key:
+        voice = VoiceTranscriber(
+            api_key=cfg.groq_api_key,
+            base_url=cfg.groq_base_url,
+            model=cfg.groq_model,
+        )
+        log.info("Голосовые подключены (Groq Whisper, %s)", cfg.groq_model)
+    else:
+        log.info("GROQ_API_KEY не задан — голосовые отключены")
+
     # --- aiogram ---
+    # Без parse_mode=HTML: иначе Telegram пытается распарсить угловые скобки
+    # в текстах как HTML-теги и падает (например, плейсхолдеры [id] / [username]).
     bot = Bot(cfg.bot_token)
     dp = Dispatcher()
     dp.include_router(cmd_handlers.build_router(cfg.owner_tg_id, db, factory))
     dp.include_router(msg_handlers.build_router(cfg.owner_tg_id, db, brain,
-                                                 system_prompt, cfg.memory_turns))
+                                                 system_prompt, cfg.memory_turns,
+                                                 voice=voice))
 
     # --- понедельная авто-планёрка ---
     async def weekly_callback() -> None:
